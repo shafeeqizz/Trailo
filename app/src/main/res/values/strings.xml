@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Trailo</string>
+    <string name="home_title">Travel together.</string>
+    <string name="home_description">A future shared map for friends driving in separate vehicles.</string>
+    <string name="foundation_status">Early development · App foundation</string>
+    <string name="show_vision">About Trailo</string>
+    <string name="hide_vision">Hide details</string>
+    <string name="product_vision">Planned: join a convoy, see your group on a shared map, and follow a leader’s actual movement without a fixed destination.</string>
+    <string name="feature_notice">Navigation and live location sharing are not available yet.</string>
+</resources>

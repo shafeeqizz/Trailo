@@ -1,0 +1,31 @@
+# Gradle / Android Studio
+.gradle/
+.kotlin/
+**/build/
+.idea/
+*.iml
+.externalNativeBuild/
+.cxx/
+captures/
+local.properties
+
+# Local credentials and signing material
+.env
+.env.*
+!.env.example
+secrets.properties
+**/google-services.json
+**/GoogleService-Info.plist
+*.jks
+*.keystore
+keystore.properties
+*.p12
+*.pem
+
+# Generated packages / OS files
+*.apk
+*.aab
+*.ap_
+*.hprof
+.DS_Store
+Thumbs.db
