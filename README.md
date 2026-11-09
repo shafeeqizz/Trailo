@@ -5,10 +5,31 @@ in separate vehicles. The goal is a shared map where participants can see each
 other and follow a selected leader's actual movement without a fixed destination.
 Public Android release comes first; iOS is a longer-term direction.
 
-**Current status:** a Compose welcome screen, light/dark themes, ViewModel-owned
-overview state, and JVM tests. Maps, navigation, authentication, and location
-sharing are not implemented. The app requests no location or network access and
-uses no external services.
+**Current status:** Milestone 2 is implemented and validated on an API 35 Google
+Play emulator with a simulated moving route. It includes a Maps Compose home
+screen, opt-in precise/approximate foreground location, continuous driving
+tracking, directional marker, accuracy circle, camera-follow controls, stale
+retention/recovery, and recoverable location/Play services states. Map tiles require a
+restricted Maps API key; keyless builds show setup guidance. Convoy sharing,
+authentication, routes, and navigation are not implemented.
+
+Location has two foreground-only modes: battery-efficient map browsing and a
+manually enabled active driving test (high accuracy, requested 1000 ms interval,
+500 ms minimum, 0 m displacement). These are tunable requests, not guaranteed
+GPS frequencies. Driving follows the moving marker automatically; panning pauses
+camera follow and Recenter resumes it. Tracking never depends on repeated
+single-location requests. The marker interpolates between measured fixes only.
+Temporary loss retains the last position with a stale warning (10 seconds in
+driving, 60 seconds in browsing). Fresh fixes recover automatically. Backgrounding
+cancels updates; permission loss/downgrade clears positions. Nothing persists to disk.
+
+The driving map uses a blue course arrow when GPS heading is reliable, otherwise
+a neutral location dot. Tap **North up** / **Heading up** to switch camera orientation.
+Driving follow looks ahead along travel (below-centre vehicle in heading-up); panning
+or zooming pauses following, and **Recenter on me** restores it. Stale positions
+turn gray and hold still. Recovery after a prolonged gap snaps to the new measured
+position rather than animating an unobserved journey. See
+[driving map experience](docs/driving-map-experience.md) for heading rules and validation.
 
 ## Technology
 
@@ -18,11 +39,11 @@ uses no external services.
 | Architecture | MVVM, feature-oriented presentation, domain/data layers as needed |
 | Build | Gradle Kotlin DSL, wrapper 8.13, Android Gradle Plugin 8.13.2 |
 | Android | Minimum API 26 (Android 8.0), compile/target API 36 |
-| Testing | JUnit 4 local JVM tests, Android lint |
-| Planned mapping / routing | Google Maps SDK for Android, Google Routes API |
+| Testing | JUnit 4 JVM behavior tests, Android instrumented smoke tests, Android lint |
+| Mapping | Google Maps SDK via Maps Compose 6.7.1, fused location 21.3.0 |
 | Planned backend | Firebase Authentication, Realtime Database, Cloud Firestore |
 
-Maps/Firebase dependencies are absent until their features are implemented.
+Maps/location dependencies are implemented; Firebase and Routes remain future work.
 The foundation does not need DI, networking, or navigation frameworks.
 
 ## Development
@@ -37,6 +58,7 @@ The foundation does not need DI, networking, or navigation frameworks.
 
 ```sh
 ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+./gradlew :app:connectedDebugAndroidTest
 ```
 
 Outputs: `app/build/outputs/apk/debug/`,
@@ -44,9 +66,19 @@ Outputs: `app/build/outputs/apk/debug/`,
 `app/build/reports/lint-results-debug.html`.
 
 Run `app` on an API 26+ device/emulator in Android Studio, or use
-`./gradlew :app:installDebug` with an attached device. No Google credentials are
-needed. Check overview expansion/collapse, dark mode, large fonts, rotation, and
+`./gradlew :app:installDebug` with an attached device. Configure a restricted Maps
+key using `secrets.properties.example`; see [external setup](docs/external-setup.md).
+Keyless builds work with a setup message. Check permissions, recenter, dark mode,
+large fonts, rotation, and
 system insets. Device checks are separate from JVM tests and lint.
+Instrumented tests require a running emulator/device and can uninstall the app;
+run `./gradlew :app:installDebug` after them when testing manually.
+
+The milestone suite covers 43 JVM behaviors and two Android smoke checks.
+Recorded emulator checks include a moving route with turns, pan/double-tap zoom,
+Recenter, stationary fixes, GPS loss/recovery, lifecycle cancellation, and light/dark
+layouts. Native-bearing reliability, road GPS noise, and battery use still need
+physical-device validation. This is local tracking, not turn-by-turn navigation.
 
 Release builds enable R8 with Android's default optimized rules. Release signing,
 Play deployment, and production backends are unconfigured. `com.trailo.app` is
@@ -61,27 +93,32 @@ app/
     AndroidManifest.xml
     java/com/trailo/app/
       MainActivity.kt
-      ui/home/          # Route, stateless screen, ViewModel, immutable UI state
+      domain/location/  # Plain Kotlin position/state and repository contract
+      data/location/    # Cancellable foreground fused-location implementation
+      ui/home/          # Map route, stateless screen, ViewModel, immutable UI state
       ui/theme/         # Shared Compose theme
     res/                # Strings, platform themes, launcher artwork
   src/test/             # JVM behavior tests
+  src/androidTest/      # Activity recreation and foreground-permission smoke tests
 gradle/                 # Version catalog and wrapper
-docs/external-setup.md  # Future Google services setup and security boundaries
+docs/external-setup.md  # Maps key setup, emulator checks, future service boundaries
 AGENTS.md               # Contributor and agent conventions
 ```
 
 Keep one module initially. Add `domain/` for plain Kotlin models/use cases/repository
 contracts and `data/` for SDK-backed implementations as features need them. UI
 should depend on abstractions, not Firebase/Maps clients. Extract modules only for
-concrete ownership, reuse, or build-isolation needs. The current ViewModel uses
-synchronous Compose state; use StateFlow with lifecycle-aware collection for
-asynchronous work. There is no iOS scaffold or shared-code architecture yet.
+concrete ownership, reuse, or build-isolation needs. The home ViewModel uses
+StateFlow with lifecycle-aware collection; an Android location repository owns
+foreground-only SDK callbacks. There is no iOS scaffold or shared-code architecture yet.
 
 ## Roadmap
 
 1. **Foundation:** Compose shell, MVVM boundary, tests, conventions, secure setup docs.
-2. **Map/local location:** restricted key, consent/permission UX, foreground location,
-   lifecycle handling, device tests.
+2. **Map/local location (implemented; API 35 emulator validated):** restricted key,
+   consent/permission UX, continuous foreground driving, directional marker,
+   north-up/heading-up camera following, stale recovery, lifecycle handling, tests.
+   Physical-device quality and battery validation remain before public release.
 3. **Identity/sessions:** Firebase Authentication, create/join, membership security,
    expiry, emulator-tested database rules.
 4. **Live convoy:** session-scoped Realtime Database updates, leader selection,
@@ -95,3 +132,5 @@ asynchronous work. There is no iOS scaffold or shared-code architecture yet.
 
 See [external setup](docs/external-setup.md) before integrating Google services.
 Follow [AGENTS.md](AGENTS.md); use small feature branches/PRs and never push to main.
+
+See [foreground driving validation](docs/driving-validation.md) for API 35 moving-route evidence and device-testing limits.
