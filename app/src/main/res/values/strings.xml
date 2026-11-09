@@ -1,11 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Trailo</string>
-    <string name="home_title">Travel together.</string>
-    <string name="home_description">A future shared map for friends driving in separate vehicles.</string>
-    <string name="foundation_status">Early development · App foundation</string>
-    <string name="show_vision">About Trailo</string>
-    <string name="hide_vision">Hide details</string>
-    <string name="product_vision">Planned: join a convoy, see your group on a shared map, and follow a leader’s actual movement without a fixed destination.</string>
-    <string name="feature_notice">Navigation and live location sharing are not available yet.</string>
+    <string name="north_up">North up</string>
+    <string name="heading_follow">Heading up</string>
+    <string name="stale_compact">GPS stale - last known position</string>
+    <string name="approximate_compact">Approximate location - heading unavailable</string>
+    <string name="maps_key_missing">Map tiles need a valid Maps API key. Configure secrets.properties and rebuild.</string>
+    <string name="play_services_missing">Google Play services is missing or needs an update. The map and local location are unavailable.</string>
+    <string name="fix_play_services">Check Google Play services</string>
+    <string name="location_permission_explanation">Enable foreground location to show your position. Approximate location is supported. Your location is not shared with friends.</string>
+    <string name="enable_location">Enable location</string>
+    <string name="app_settings">App settings / permission help</string>
+    <string name="location_disabled">Device location is off. Turn it on to show your position.</string>
+    <string name="location_settings">Open location settings</string>
+    <string name="location_waiting">Waiting for a current location&#8230;</string>
+    <string name="recenter">Recenter on me</string>
+    <string name="start_driving">Start driving test</string>
+    <string name="stop_driving">Stop driving test</string>
+    <string name="your_location">Your location</string>
+    <string name="last_known_location">Last known location (stale)</string>
+    <string name="location_updates_unavailable">Live location updates are temporarily unavailable.</string>
+    <string name="map_description">Trailo map. Pan and zoom to explore.</string>
 </resources>
