@@ -1,5 +1,15 @@
 package com.trailo.app
 
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.trailo.app.data.firebase.EmulatorConvoyGateway
+import com.trailo.app.data.firebase.FirebaseConvoyRepository
+import com.trailo.app.domain.convoy.*
+import com.trailo.app.ui.convoy.ConvoyRoute
+import com.trailo.app.ui.convoy.ConvoyViewModel
+import kotlinx.coroutines.flow.flowOf
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -33,6 +43,24 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    private val convoyViewModel: ConvoyViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val repository = if (BuildConfig.CONVOY_EMULATORS) {
+                    FirebaseConvoyRepository(EmulatorConvoyGateway.create(applicationContext))
+                } else object : ConvoyRepository {
+                    override fun observeSession() = flowOf(ConvoySession.Failed(ConvoyError.SETUP))
+                    override suspend fun create(name: String) { throw ConvoyException(ConvoyError.SETUP) }
+                    override suspend fun join(secretOrLink: String) { throw ConvoyException(ConvoyError.SETUP) }
+                    override suspend fun invite(convoyId: String): Invitation = throw ConvoyException(ConvoyError.SETUP)
+                    override suspend fun leave(convoyId: String) { throw ConvoyException(ConvoyError.SETUP) }
+                    override suspend fun end(convoyId: String) { throw ConvoyException(ConvoyError.SETUP) }
+                }
+                @Suppress("UNCHECKED_CAST")
+                return ConvoyViewModel(repository) as T
+            }
+        }
+    }
     private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         refreshEnvironment()
     }
@@ -42,7 +70,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TrailoTheme {
+                var lobby by rememberSaveable { mutableStateOf(false) }
                 HomeRoute(
+                    onOpenConvoy = { lobby = true },
                     viewModel = homeViewModel,
                     onRequestLocation = {
                         permissionRequest.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
@@ -54,6 +84,15 @@ class MainActivity : ComponentActivity() {
                         availability.getErrorDialog(this, availability.isGooglePlayServicesAvailable(this), 100)?.show()
                     },
                 )
+                if (lobby) Dialog(onDismissRequest = { lobby = false },
+                    properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+                    ConvoyRoute(convoyViewModel, onClose = { lobby = false }, onShare = { text ->
+                        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, text)
+                        }, getString(com.trailo.app.R.string.convoy_share)))
+                    })
+                }
             }
         }
     }

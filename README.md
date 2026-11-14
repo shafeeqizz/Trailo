@@ -41,9 +41,16 @@ position rather than animating an unobserved journey. See
 | Android | Minimum API 26 (Android 8.0), compile/target API 36 |
 | Testing | JUnit 4 JVM behavior tests, Android instrumented smoke tests, Android lint |
 | Mapping | Google Maps SDK via Maps Compose 6.7.1, fused location 21.3.0 |
-| Planned backend | Firebase Authentication, Realtime Database, Cloud Firestore |
+| Convoy backend | Authenticated Firebase callables, Firestore rules/transactions, Node 22; local Emulator Suite only |
+| Android convoy lobby | Anonymous Auth, session listeners and Functions SDK from Firebase BoM 34.19.0 |
 
-Maps/location dependencies are implemented; Firebase and Routes remain future work.
+Milestone 3 implements Create, Invite, Join, Leave and End with an emulator-only
+Android lobby and bounded recovery for uncertain callable outcomes. Release convoy
+access is disabled. No Firebase services or rules have been deployed. Live location
+sharing, other vehicle markers, routing and Follow Leader remain future work.
+See [lobby setup](docs/android-convoy-lobby.md),
+[operation recovery](docs/convoy-operation-recovery.md), and
+[final review](docs/milestone-3-final-review.md).
 The foundation does not need DI, networking, or navigation frameworks.
 
 ## Development
@@ -53,7 +60,11 @@ The foundation does not need DI, networking, or navigation frameworks.
 2. Install Android SDK Platform 36 and Build Tools 35.0.0 and accept SDK licenses.
    Set `ANDROID_HOME` or let Android Studio write ignored `local.properties`
    containing `sdk.dir`.
-3. Open the repository root and sync Gradle. Use the checked-in wrapper; Windows
+3. Firebase demo options are supplied explicitly; no `google-services.json` or
+   production credentials are needed. Use Node 22 and Java 21 to run `npm ci`,
+   `npm --prefix functions ci`, then `npm run emulators` for the lobby. See
+   [Firebase setup](docs/external-setup.md#firebase).
+4. Open the repository root and sync Gradle. Use the checked-in wrapper; Windows
    users can substitute `gradlew.bat`.
 
 ```sh
@@ -119,11 +130,11 @@ foreground-only SDK callbacks. There is no iOS scaffold or shared-code architect
    consent/permission UX, continuous foreground driving, directional marker,
    north-up/heading-up camera following, stale recovery, lifecycle handling, tests.
    Physical-device quality and battery validation remain before public release.
-3. **Identity/sessions:** Firebase Authentication, create/join, membership security,
-   expiry, emulator-tested database rules.
+3. **Identity/sessions (implemented locally):** anonymous Auth, all five session
+   actions, Android lobby, operation recovery, expiry and emulator-tested rules.
 4. **Live convoy:** session-scoped Realtime Database updates, leader selection,
    stale/offline states, battery-aware updates, sharing controls. Firestore is
-   planned for durable metadata; validate authority boundaries before integration.
+   already used for convoy metadata; validate future sharing authority boundaries.
 5. **Movement following:** leader history and navigation experiments; evaluate
    backend Routes API use where routing is useful.
 6. **Release hardening:** privacy/retention, background-location evaluation, abuse

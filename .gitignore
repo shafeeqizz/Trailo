@@ -31,3 +31,11 @@ keystore.properties
 Thumbs.db
 hs_err_pid*.log
 replay_pid*.log
+
+# Firebase backend tooling and emulator output
+node_modules/
+functions/lib/
+*-debug.log
+*-debug.*.log
+.firebase/
+.npm-cache/
