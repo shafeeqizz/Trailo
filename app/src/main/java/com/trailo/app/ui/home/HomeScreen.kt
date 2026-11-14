@@ -40,12 +40,13 @@ fun HomeRoute(
     onAppSettings: () -> Unit,
     onLocationSettings: () -> Unit,
     onPlayServices: () -> Unit,
+    onOpenConvoy: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     HomeScreen(state, onRequestLocation, onAppSettings, onLocationSettings, onPlayServices, viewModel::recenter,
         onToggleDriving = {
             viewModel.setTrackingMode(if (state.trackingMode == TrackingMode.ACTIVE_DRIVING) TrackingMode.MAP_BROWSING else TrackingMode.ACTIVE_DRIVING)
-        }, onCameraGesture = viewModel::onCameraGesture, onToggleCameraMode = viewModel::toggleCameraMode)
+        }, onCameraGesture = viewModel::onCameraGesture, onToggleCameraMode = viewModel::toggleCameraMode, onOpenConvoy = onOpenConvoy)
 }
 
 @Composable
@@ -60,6 +61,7 @@ fun HomeScreen(
     onCameraGesture: () -> Unit,
     onToggleCameraMode: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenConvoy: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -80,6 +82,7 @@ fun HomeScreen(
                             Text(stringResource(if (state.cameraMode == CameraMode.NORTH_UP) R.string.north_up else R.string.heading_follow))
                         }
                     }
+                    TextButton(onClick = onOpenConvoy) { Text(stringResource(R.string.convoy_lobby)) }
                     TextButton(onClick = onToggleDriving) {
                         Text(stringResource(if (state.trackingMode == TrackingMode.ACTIVE_DRIVING) R.string.stop_driving else R.string.start_driving))
                     }

@@ -4,6 +4,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    // Local convoy builds supply demo options explicitly; never compile a real
+    // Firebase project's resource configuration into emulator test builds.
+    alias(libs.plugins.google.services) apply false
 }
 
 // Local-only credentials; deliberately independent of local.properties (Android SDK).
@@ -31,7 +34,9 @@ android {
     }
 
     buildTypes {
+        debug { buildConfigField("boolean", "CONVOY_EMULATORS", "true") }
         release {
+            buildConfigField("boolean", "CONVOY_EMULATORS", "false")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
@@ -54,6 +59,11 @@ kotlin {
 }
 
 dependencies {
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.functions)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -68,6 +78,9 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
 }

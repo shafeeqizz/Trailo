@@ -1,8 +1,9 @@
 # Maps and foreground location setup
 
 Milestone 2 uses Maps Compose 6.7.1 (which brings the Maps SDK for Android)
-and Google Play services fused location 21.3.0. Firebase, convoy membership,
-friend tracking, Routes, and navigation are not implemented.
+and Google Play services fused location 21.3.0. Milestone 3 adds emulator-only
+Firebase convoy membership and an Android lobby. Friend tracking, live sharing,
+Routes and navigation are not implemented.
 
 ## Local key and Google Cloud
 
@@ -155,27 +156,53 @@ Official guide: https://developers.google.com/maps/documentation/routes
 
 ## Firebase
 
-1. Create separate development/production projects. Register Android using the
-   confirmed app ID and relevant signing fingerprints.
-2. Choose auth providers and database regions deliberately. Proposed roles:
-   Authentication for identity, Realtime Database for ephemeral location/presence,
-   Firestore for durable metadata. Validate the design before implementation;
-   avoid conflicting membership authorities across databases.
-3. Only during integration, put downloaded client `google-services.json` in the
-   ignored `app/` directory and add Google Services/Firebase BOM dependencies.
-   Client config is not authorization. Keeping it local avoids mixing environments.
-   Never include Firebase Admin/service-account keys in an Android client.
-4. Deploy deny-by-default rules before clients connect. Require authenticated,
-   active membership and validate identities, schema, and timestamps. Commit rules
-   and emulator tests for unauthorized/cross-session access, expiry, and revoked
-   membership with the feature. Never use public test-mode rules. Evaluate App Check.
-5. Define sharing consent, retention/deletion, account deletion, expiry, and offline
-   behavior. Minimize location history and never log coordinates or auth tokens.
+Milestone 3 implements all five convoy mutations and the Android lobby locally.
+See [lobby setup](android-convoy-lobby.md), [recovery protocol](convoy-operation-recovery.md)
+and [final review](milestone-3-final-review.md) for contracts, validation and blockers.
 
-Use isolated emulators with synthetic data for integration tests, never production.
-Emulator configuration/tooling will be added with Firebase integration.
+### Emulator-only development
 
-Official docs:
+Use Node 22, Java 21 and the existing Android SDK. From the repository root:
+
+```powershell
+npm.cmd ci
+npm.cmd --prefix functions ci
+npm.cmd run test:emulators
+# Keep this process running while using the Android lobby:
+npm.cmd run emulators
+```
+
+The launcher fixes `demo-trailo` and loopback Auth/Firestore/Functions ports
+9099/8080/5001, filtering inherited service credentials. Android debug uses
+`10.0.2.2` for those services and `us-central1` Functions. Release convoy access
+is disabled. Development does not require Firebase console changes, billing,
+a downloaded client config or a deployment. Emulator data is ephemeral unless
+exported/imported; do not erase an anonymous identity as a routine recovery step.
+
+Auth, Firestore and Functions Android artifacts use Firebase BoM 34.19.0 with
+the Kotlin 2.2 toolchain. Newer BoMs selecting Kotlin 2.4 metadata require a
+separate compatibility review; do not suppress metadata checks. Google Services
+plugin 4.5.0 is declared with `apply false`, including in the app. Automatic
+FirebaseInitProvider initialization is removed; the gateway supplies only demo
+options explicitly. `google-services.json` is ignored, neither required nor
+compiled by this emulator slice. Maps credentials remain separate and unchanged.
+
+Known limitation: legacy Instance ID/Installations background registration can
+reach Google and fail with the fabricated config even when convoy clients use
+emulators. Do not introduce real credentials to silence this; strict network
+isolation needs an SDK/transport or egress-control follow-up.
+
+### Before a production integration
+
+Review separate development/production projects and Android registrations,
+Anonymous Auth policy/account recovery, region selection, runtime IAM, App Check,
+API restrictions, quotas, abuse controls, privacy and deletion policy. Deploy
+reviewed deny-by-default rules only through a separately authorized workflow.
+Define safe receipt retention before any TTL deletion. Real Firebase configuration,
+Admin credentials, signing keys and tokens must never be committed. No production
+setup, deployment or release is authorized by the local emulator checks.
+
+Official references:
 
 - https://firebase.google.com/docs/android/setup
 - https://firebase.google.com/docs/emulator-suite
